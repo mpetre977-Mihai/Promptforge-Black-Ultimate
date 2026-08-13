@@ -1,5 +1,8 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+export const config = {
+  api: { bodyParser: false }
+}
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' as any });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 function genKey(plan: string) {

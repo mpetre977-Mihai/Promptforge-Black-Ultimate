@@ -18,37 +18,20 @@ export default async function handler(req: any, res: any) {
   const chunks: any[] = [];
   for await (const chunk of req) chunks.push(chunk);
   const buf = Buffer.concat(chunks);
-  const sig = req.headers['stripe-signature'];
-  let event: any;
-  try {
-    event = stripe.webhooks.constructEvent(buf, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
-  } catch (err: any) {
-    console.error('SIG FAIL', err.message);
-    return res.status(400).send(err.message);
-  }
-
-  console.log('EVENT:', event.type);
+  const event = stripe.webhooks.constructEvent(buf, req.headers['stripe-signature']!, process.env.STRIPE_WEBHOOK_SECRET!);
   
   if (event.type === 'checkout.session.completed') {
-    const s = event.data.object;
-    const email = s.customer_details?.email || s.customer_email || 'noemail@test.com';
-    const key = genKey();
-    console.log('TRY INSERT', email, key);
-    console.log('HAS ENV', !!process.env.SUPABASE_URL, !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-    
-    const { data, error } = await supabase.from('licenses').insert({
-      email,
-      license_key: key,
-      plan: 'basic',
-      stripe_session_id: s.id,
-      is_active: true
-    }).select();
-
-    if (error) {
-      console.error('SUPABASE ERROR', error);
-      return res.status(500).json({ error: error.message });
+    const s: any = event.data.object;
+    const email = s.customer_details?.email || s.customer_email;
+    if (email) {
+      await supabase.from('licenses').upsert({
+        email,
+        license_key: genKey(),
+        plan: 'basic',
+        stripe_session_id: s.id,
+        is_active: true
+      }, { onConflict: 'email' });
     }
-    console.log('INSERT OK', data);
   }
   return res.status(200).json({ received: true });
 }

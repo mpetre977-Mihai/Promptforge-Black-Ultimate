@@ -1,22 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Sparkles,
-  Layers,
-  Terminal,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Menu,
-  X,
-  ArrowRight,
-  ShieldCheck,
-  Cpu,
-  Zap,
-  Flame,
-  Lock,
-  Star,
-  ExternalLink
-} from 'lucide-react';
+import { Sparkles, Layers, Terminal, CheckCircle2, ChevronDown, ChevronUp, Menu, X, ArrowRight, ShieldCheck, Cpu, Zap, Flame, Lock, Star, ExternalLink, LogOut, Download, Crown } from 'lucide-react';
 
 const PRODUCTS = [
   { id: 'basic', name: 'BASIC PACK', price: '$49', type: 'one-time', description: 'Perfect for starters and hobbyists looking to enhance their AI outputs.', features: ['100 premium prompts','For personal use','ChatGPT, Midjourney & Claude','Lifetime access'], stripeLink: 'https://buy.stripe.com/4gM28q20I1VzeUFctX00001', popular: false, value: '' },
@@ -63,7 +46,11 @@ function ActivatePage() {
     try {
       const r = await fetch(`/api/verify-license?key=${encodeURIComponent(k)}`);
       const j = await r.json();
-      if (j.valid) { setStatus('valid'); setInfo(j); } else { setStatus('invalid'); }
+      if (j.valid) {
+        setStatus('valid'); setInfo(j);
+        localStorage.setItem('pf_license_key', k);
+        localStorage.setItem('pf_license', JSON.stringify(j));
+      } else { setStatus('invalid'); }
     } catch { setStatus('invalid'); }
   }
 
@@ -79,10 +66,50 @@ function ActivatePage() {
           <button onClick={()=>verify(key)} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-sm">Verifică</button>
         </div>
         {status==='loading' && <p className="text-purple-400 animate-pulse">Se verifică...</p>}
-        {status==='valid' && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-left"><p className="text-green-400 font-bold flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/> Licență validă!</p><p className="text-sm mt-3 text-gray-300">Plan: <b className="text-white">{info.plan?.toUpperCase()}</b><br/>Email: {info.email}</p><a href="/" className="mt-4 inline-block w-full text-center px-6 py-3 bg-white text-black rounded-xl font-bold">Mergi la Vault</a></div>}
+        {status==='valid' && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-left"><p className="text-green-400 font-bold flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/> Licență validă!</p><p className="text-sm mt-3 text-gray-300">Plan: <b className="text-white">{info.plan?.toUpperCase()}</b><br/>Email: {info.email}</p><a href="/vault" className="mt-4 inline-block w-full text-center px-6 py-3 bg-white text-black rounded-xl font-bold">Mergi la Vault →</a></div>}
         {status==='invalid' && <p className="text-red-400 font-bold bg-red-500/10 border border-red-500/30 rounded-xl p-3">❌ Cheie invalidă. Verifică emailul din spam.</p>}
-        {status==='idle' && <p className="text-xs text-gray-500">Introdu cheia PF-... primită pe email după plată.</p>}
       </div>
+    </div>
+  )
+}
+
+function VaultPage({ navigate }: { navigate: (p:string)=>void }) {
+  const [license, setLicense] = useState<any>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('pf_license');
+    const key = localStorage.getItem('pf_license_key');
+    if (!saved ||!key) { window.location.href = '/activate'; return; }
+    setLicense(JSON.parse(saved));
+  }, []);
+
+  if (!license) return <div className="min-h-screen bg-[#050508] text-white flex items-center justify-center">Se încarcă Vault-ul...</div>;
+
+  return (
+    <div className="min-h-screen bg-[#050508] text-white">
+      <header className="border-b border-white/5 p-4 flex justify-between items-center max-w-7xl mx-auto">
+        <div className="flex items-center gap-2"><div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl"><Crown className="w-5 h-5" /></div><span className="font-bold">PromptForge Vault</span><span className="ml-3 px-3 py-1 bg-purple-600 rounded-full text-xs font-bold">{license.plan?.toUpperCase()}</span></div>
+        <button onClick={()=>{localStorage.clear(); navigate('/');}} className="text-sm text-gray-400 hover:text-white flex gap-2 items-center"><LogOut className="w-4 h-4"/> Logout</button>
+      </header>
+      <main className="max-w-7xl mx-auto p-6">
+        <h1 className="text-3xl font-extrabold mb-2">Bine ai venit în Vault, {license.email}</h1>
+        <p className="text-gray-400 mb-8">Aici vezi prompturile pentru planul tău <b className="text-white">{license.plan}</b>. Testul tău cu {localStorage.getItem('pf_license_key')} merge perfect.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6"><h3 className="font-bold mb-2 flex items-center gap-2"><Download className="w-5 h-5 text-purple-400"/> BASIC Pack</h3><p className="text-sm text-gray-400 mb-4">100+ prompturi. {license.plan==='basic' || license.plan==='pro' || license.plan==='agency'? '✅ Deblocat' : '🔒 Blocat'}</p><button className="w-full py-2 bg-white text-black rounded-xl font-bold text-sm">Descarcă PDF</button></div>
+          <div className="bg-white/5 border border-purple-500/30 rounded-2xl p-6"><h3 className="font-bold mb-2 flex items-center gap-2"><Crown className="w-5 h-5 text-purple-400"/> PRO Pack</h3><p className="text-sm text-gray-400 mb-4">500+ prompturi. {license.plan==='pro' || license.plan==='agency'? '✅ Deblocat' : '🔒 Blocat - Upgrade'}</p><button className="w-full py-2 bg-purple-600 text-white rounded-xl font-bold text-sm">Descarcă PDF</button></div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6"><h3 className="font-bold mb-2">AGENCY Pack</h3><p className="text-sm text-gray-400 mb-4">Unlimited. {license.plan==='agency'? '✅ Deblocat' : '🔒 Blocat'}</p><button className="w-full py-2 bg-white/10 text-white rounded-xl font-bold text-sm">Descarcă PDF</button></div>
+        </div>
+
+        <div className="mt-10 bg-[#0c0c12] border border-white/5 rounded-2xl p-6">
+          <h2 className="font-bold mb-4">Prompturi de test (primele 3 din Basic)</h2>
+          <div className="space-y-3 text-sm text-gray-300 font-mono bg-black/50 p-4 rounded-xl">
+            <p>1. Act as a senior copywriter for SaaS... [Basic]</p>
+            <p>2. You are Midjourney v6 architect, create photorealistic UI...</p>
+            <p>3. System prompt for Claude 3.5 to debug React performance...</p>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }
@@ -92,11 +119,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const navigate = (path: string) => {
-    window.history.pushState({}, '', path);
-    setCurrentPath(path);
-    window.scrollTo(0, 0);
-  };
+  const navigate = (path: string) => { window.history.pushState({}, '', path); setCurrentPath(path); window.scrollTo(0, 0); };
 
   useEffect(() => {
     const handlePopState = () => { setCurrentPath(window.location.pathname); };
@@ -108,223 +131,21 @@ export default function App() {
 
   if (currentPath === '/thank-you') {
     return (
-      <div className="min-h-screen bg-[#050508] text-white flex flex-col justify-between selection:bg-purple-500 selection:text-white">
-        <header className="border-b border-white/5 bg-[#050508]/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-purple-500/20"><Sparkles className="w-5 h-5 text-white animate-pulse" /></div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Prompt<span className="text-purple-500 font-extrabold">Forge</span></span>
-            </div>
-            <button onClick={() => navigate('/')} className="text-sm font-medium text-gray-400 hover:text-white transition-colors flex items-center gap-1">Back to Home <ArrowRight className="w-4 h-4" /></button>
-          </div>
-        </header>
-        <main className="flex-grow flex items-center justify-center px-4 py-20 relative overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-1/4 right-10 w-72 h-72 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="max-w-xl w-full text-center relative z-10">
-            <div className="inline-flex items-center justify-center p-4 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 mb-6 animate-bounce"><CheckCircle2 className="w-12 h-12" /></div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4 leading-tight">Thank You for Your Purchase!</h1>
-            <p className="text-lg text-gray-400 mb-8">Welcome to the elite club of AI builders. Your subscription/pack activation is complete. We've sent an email with your secure credentials and direct vault access link.</p>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-left mb-8 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-400" />What to do next:</h3>
-              <ul className="space-y-3 text-sm text-gray-300">
-                <li className="flex gap-2"><span className="text-purple-400 font-bold">1.</span><span>Check your spam/promotions folder if you don't see the confirmation email within 2 minutes.</span></li>
-                <li className="flex gap-2"><span className="text-purple-400 font-bold">2.</span><span>Bookmark the <strong>PromptForge Vault</strong> link sent to your email to get instant access anytime.</span></li>
-                <li className="flex gap-2"><span className="text-purple-400 font-bold">3.</span><span>Join our exclusive Discord channel to network with fellow AI engineers and access bonus weekly drops.</span></li>
-              </ul>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button onClick={() => navigate('/')} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition duration-300 shadow-lg shadow-purple-600/30 active:scale-95 flex items-center justify-center gap-2">Go to Homepage</button>
-              <a href="https://discord.gg" target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-medium rounded-xl transition duration-300 active:scale-95 flex items-center justify-center gap-2">Join Discord <ExternalLink className="w-4 h-4" /></a>
-            </div>
-          </div>
-        </main>
-        <footer className="border-t border-white/5 py-8 text-center text-sm text-gray-500"><p>© {new Date().getFullYear()} PromptForge. All rights reserved.</p></footer>
+      <div className="min-h-screen bg-[#050508] text-white flex flex-col justify-between">
+        <header className="border-b border-white/5 bg-[#050508]/80 backdrop-blur-md sticky top-0 z-50"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"><div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}><div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl"><Sparkles className="w-5 h-5" /></div><span className="text-xl font-bold">Prompt<span className="text-purple-500">Forge</span></span></div><button onClick={() => navigate('/')} className="text-sm text-gray-400">Back to Home</button></div></header>
+        <main className="flex-grow flex items-center justify-center p-4"><div className="text-center max-w-xl"><CheckCircle2 className="w-12 h-12 text-purple-400 mx-auto mb-4"/><h1 className="text-4xl font-extrabold mb-4">Thank You!</h1><p className="text-gray-400 mb-6">Emailul cu licența a fost trimis. Verifică spam.</p><button onClick={()=>navigate('/')} className="px-6 py-3 bg-purple-600 rounded-xl">Homepage</button></div></main>
       </div>
     );
   }
-
-  if (currentPath.startsWith('/activate')) {
-    return <ActivatePage />;
-  }
+  if (currentPath.startsWith('/activate')) { return <ActivatePage />; }
+  if (currentPath.startsWith('/vault')) { return <VaultPage navigate={navigate} />; }
 
   return (
-    <div className="min-h-screen bg-[#050508] text-gray-100 flex flex-col selection:bg-purple-600 selection:text-white">
-      <header className="border-b border-white/5 bg-[#050508]/80 backdrop-blur-md sticky top-0 z-50 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2.5 rounded-xl shadow-lg shadow-purple-500/25"><Sparkles className="w-5 h-5 text-white" /></div>
-              <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">Prompt<span className="text-purple-500 font-extrabold">Forge</span></span>
-            </div>
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Features</a>
-              <a href="#pricing" className="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1"><Flame className="w-4 h-4 text-orange-400 fill-orange-400" /> Pricing</a>
-              <a href="#testimonials" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Testimonials</a>
-              <a href="#faq" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">FAQ</a>
-            </nav>
-            <div className="hidden md:flex items-center gap-4"><a href="#pricing" className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition duration-300 shadow-lg shadow-purple-600/25 active:scale-95">Browse Prompts</a></div>
-            <div className="md:hidden"><button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" aria-label="Toggle Menu">{mobileMenuOpen? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button></div>
-          </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden border-b border-white/5 bg-[#050508]/95 px-4 pt-2 pb-6 space-y-3 absolute top-20 left-0 w-full backdrop-blur-xl transition-all">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">Features</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-base font-medium text-purple-400 hover:text-purple-300 hover:bg-white/5">Pricing</a>
-            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">Testimonials</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5">FAQ</a>
-            <div className="pt-4 border-t border-white/5"><a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium text-sm transition-colors shadow-lg shadow-purple-600/20">Get Started</a></div>
-          </div>
-        )}
-      </header>
-      <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w- h- bg-purple-600/10 rounded-full blur- pointer-events-none" />
-        <div className="absolute top-12 left-10 w-96 h-96 bg-indigo-600/5 rounded-full blur- pointer-events-none" />
-        <div className="absolute right-1/4 bottom-12 w- h- bg-purple-800/10 rounded-full blur- pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm text-purple-300 mb-8 backdrop-blur-sm shadow-inner"><span className="flex h-2 w-2 rounded-full bg-purple-500 animate-ping" /><span className="font-medium">Version 4.2 Drop is Live</span><span className="text-gray-500">|</span><span className="text-gray-400">Optimized for GPT-4o & Claude 3.5</span></div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-tight sm:leading-none mb-8"><span className="bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">1000+ Prompts That Make AI Work Like Magic</span></h1>
-          <p className="max-w-3xl mx-auto text-lg sm:text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed font-light">Unlock the true capabilities of ChatGPT, Midjourney, and Claude. Stop wrestling with instructions. Get premium, engineered prompts designed to 10x your speed and quality instantly.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition duration-300 shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 active:scale-95 flex items-center justify-center gap-2 group text-base">Get Premium Prompts <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></a>
-            <a href="#features" className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition duration-300 active:scale-95 flex items-center justify-center gap-2 text-base">Explore Features</a>
-          </div>
-          <div className="max-w-4xl mx-auto rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-[#0b0b0f] p-1.5 md:p-3 shadow-2xl shadow-purple-950/20 backdrop-blur-md">
-            <div className="bg-[#0c0c12] rounded-xl border border-white/5 overflow-hidden text-left">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0e0e16]">
-                <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500/80" /><span className="w-3 h-3 rounded-full bg-yellow-500/80" /><span className="w-3 h-3 rounded-full bg-green-500/80" /></div>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/10"><Terminal className="w-3.5 h-3.5 text-purple-400" /><span className="text-xs font-mono text-gray-400">expert_system_architect.prompt</span></div><div className="w-14" />
-              </div>
-              <div className="p-4 md:p-6 font-mono text-xs sm:text-sm text-gray-300 space-y-4">
-                <p className="text-purple-400"># SYSTEM INSTRUCTIONS FOR CLAUDE 3.5 SONNET</p>
-                <p className="text-gray-400">Act as a world-class systems architect. You are tasked with designing a production-ready, highly-scalable backend service using AWS Serverless patterns.</p>
-                <p className="text-gray-400">Ensure the architectural blueprints include strict API definitions, DynamoDB single-table schema designs with partition and sort keys laid out clearly, and an explicit disaster recovery protocol.</p>
-                <div className="p-4 bg-white/5 rounded-lg border border-purple-500/20 text-xs text-gray-400"><span className="text-purple-400 font-bold">Output Expectation:</span> Provide Markdown-formatted UML diagrams, raw YAML config templates, and JSON mock response schemas.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="py-12 border-y border-white/5 bg-[#08080c]/50 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-500 mb-6">Engineered For Excellence On</p>
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60">
-            <span className="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">🤖 ChatGPT Plus</span>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">⛵ Midjourney v6</span>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">🎭 Claude 3.5 Sonnet</span>
-            <span className="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">🌀 Llama 3</span>
-          </div>
-        </div>
-      </section>
-      <section id="features" className="py-24 relative overflow-hidden">
-        <div className="absolute top-1/2 left-10 w-96 h-96 bg-purple-900/5 rounded-full blur- pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-base text-purple-400 font-semibold tracking-wider uppercase mb-3">Why PromptForge</h2>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">Supercharge Your Output in Seconds</p>
-            <p className="text-lg text-gray-400 mt-4">Stop settling for average. Our hand-crafted, meticulously detailed prompts unlock features in LLMs you didn't even know existed.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {FEATURES.map((feature, idx) => {
-              const Icon = feature.icon;
-              return (<div key={idx} className="p-8 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-white/[0.07] transition-all duration-300 group relative"><div className="absolute inset-0 bg-gradient-to-b from-purple-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none" /><div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform"><Icon className="w-6 h-6" /></div><h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3><p className="text-gray-400 leading-relaxed text-sm sm:text-base">{feature.description}</p></div>);
-            })}
-          </div>
-        </div>
-      </section>
-      <section className="py-16 bg-gradient-to-r from-purple-950/10 via-[#050508] to-indigo-950/10 border-y border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div><p className="text-4xl sm:text-5xl font-extrabold text-white">1,000+</p><p className="text-sm text-gray-400 mt-2">Premium Prompts</p></div>
-            <div><p className="text-4xl sm:text-5xl font-extrabold text-white">15,000+</p><p className="text-sm text-gray-400 mt-2">AI Creators Served</p></div>
-            <div><p className="text-4xl sm:text-5xl font-extrabold text-white">10x</p><p className="text-sm text-gray-400 mt-2">Efficiency Boost</p></div>
-            <div><p className="text-4xl sm:text-5xl font-extrabold text-white">99.4%</p><p className="text-sm text-gray-400 mt-2">Satisfaction Rating</p></div>
-          </div>
-        </div>
-      </section>
-      <section id="pricing" className="py-24 relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w- h- bg-purple-600/5 rounded-full blur- pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-base text-purple-400 font-semibold tracking-wider uppercase mb-3">Simple, Transparent Pricing</h2>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">One-Time Payment. Lifetime Power.</p>
-            <p className="text-lg text-gray-400 mt-4">Invest in your workflow today. Select the perfect pack and start generating world-class AI outputs. No monthly subscriptions, no hidden fees.</p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            {PRODUCTS.map((prod) => (
-              <div key={prod.id} className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 ${prod.popular? 'bg-gradient-to-b from-[#161226] to-[#0c0a17] border-2 border-purple-500 shadow-2xl shadow-purple-500/10 md:-translate-y-4 scale-100' : 'bg-[#0c0c12] border border-white/10 hover:border-white/20'}`}>
-                {prod.value && (<div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase ${prod.popular? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-800 text-purple-300 border border-purple-500/20'}`}>{prod.value}</div>)}
-                <div>
-                  <div className="mb-6"><h3 className="text-2xl font-bold text-white tracking-wide mb-2 uppercase">{prod.name}</h3><p className="text-gray-400 text-sm leading-relaxed">{prod.description}</p></div>
-                  <div className="flex items-baseline gap-2 mb-8"><span className="text-5xl font-extrabold text-white tracking-tight">{prod.price}</span><span className="text-gray-500 text-sm font-semibold uppercase">/ {prod.type}</span></div>
-                  <ul className="space-y-4 mb-10 text-left border-t border-white/5 pt-8">{prod.features.map((feat, idx) => (<li key={idx} className="flex items-start gap-3"><CheckCircle2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${prod.popular? 'text-purple-400' : 'text-gray-400'}`} /><span className="text-sm text-gray-300 font-medium">{feat}</span></li>))}</ul>
-                </div>
-                <div><a href={prod.stripeLink} target="_blank" rel="noopener noreferrer" className={`block w-full text-center py-4 px-6 rounded-2xl font-bold transition duration-300 active:scale-95 text-base shadow-md ${prod.popular? 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20 hover:shadow-purple-600/40' : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'}`}>Get Instant Access</a><p className="text-center text-xs text-gray-500 mt-4 flex items-center justify-center gap-1.5"><Lock className="w-3.5 h-3.5 text-gray-500" /> Secure 256-bit SSL checkout</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section id="testimonials" className="py-24 bg-[#08080c]/30 relative overflow-hidden border-y border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-base text-purple-400 font-semibold tracking-wider uppercase mb-3">Loved by Creators</h2>
-            <p className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">What AI Power Users Say</p>
-            <p className="text-lg text-gray-400 mt-4">Join thousands of developers, copywriters, marketers, and design teams who are using PromptForge to accelerate daily workflows.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t, idx) => (
-              <div key={idx} className="p-8 rounded-2xl bg-[#0c0c12] border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors">
-                <div><div className="flex gap-1 text-purple-400 mb-6">{[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-purple-400" />))}</div><p className="text-gray-300 italic text-base leading-relaxed mb-8">"{t.quote}"</p></div>
-                <div className="flex items-center gap-4 pt-6 border-t border-white/5"><img src={t.avatar} alt={t.author} className="w-12 h-12 rounded-full object-cover border border-purple-500/30" loading="lazy" /><div><p className="font-bold text-white text-sm sm:text-base">{t.author}</p><p className="text-xs text-gray-500 font-semibold">{t.role}</p></div></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section id="faq" className="py-24 relative overflow-hidden">
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-900/5 rounded-full blur- pointer-events-none" />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16"><h2 className="text-base text-purple-400 font-semibold tracking-wider uppercase mb-3">Got Questions?</h2><p className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">Frequently Asked Questions</p></div>
-          <div className="space-y-4">
-            {FAQS.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div key={idx} className="rounded-2xl border border-white/5 bg-[#0c0c12] hover:bg-[#0e0e16] overflow-hidden transition-all duration-300">
-                  <button onClick={() => toggleFaq(idx)} className="w-full flex items-center justify-between p-6 text-left font-bold text-white text-base sm:text-lg focus:outline-none"><span>{faq.question}</span>{isOpen? (<ChevronUp className="w-5 h-5 text-purple-400 flex-shrink-0 ml-4" />) : (<ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 ml-4" />)}</button>
-                  <div className={`transition-all duration-300 overflow-hidden ${isOpen? 'max-h-80 border-t border-white/5' : 'max-h-0'}`}><div className="p-6 text-gray-400 text-sm sm:text-base leading-relaxed">{faq.answer}</div></div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-      <section className="py-20 relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="relative rounded-3xl p-8 md:p-16 overflow-hidden bg-gradient-to-b from-[#140e2d] to-[#0a061c] border border-purple-500/30 text-center">
-            <div className="absolute inset-0 bg-radial-gradient from-purple-600/10 to-transparent pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/20 rounded-full blur- pointer-events-none" />
-            <div className="relative z-10 max-w-2xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6 leading-tight">Ready to Supercharge Your AI Workflows?</h2>
-              <p className="text-gray-300 text-lg mb-8 font-light">Get full access to the PromptForge library. Elevate your engineering speed, design jaw-dropping visual landscapes, and build digital products at the speed of thought.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a href="#pricing" className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition duration-300 shadow-xl shadow-purple-600/30 hover:shadow-purple-600/50 active:scale-95">Get Instant Access</a>
-                <a href="#faq" className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-semibold rounded-xl border border-white/10 transition duration-300 active:scale-95">Still Have Questions?</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <footer className="bg-[#030305] border-t border-white/5 pt-16 pb-12 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div className="md:col-span-2"><div className="flex items-center gap-3 mb-6"><div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl"><Sparkles className="w-5 h-5 text-white" /></div><span className="text-xl font-bold tracking-tight text-white">Prompt<span className="text-purple-500">Forge</span></span></div><p className="text-sm text-gray-500 max-w-sm leading-relaxed mb-6">PromptForge is the world's premium engineered prompt repository. We enable individuals and enterprises to master LLMs and generative design suites instantly.</p></div>
-            <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Navigation</h3><ul className="space-y-2 text-sm"><li><a href="#features" className="text-gray-500 hover:text-white transition-colors">Features</a></li><li><a href="#pricing" className="text-gray-500 hover:text-white transition-colors">Pricing</a></li><li><a href="#testimonials" className="text-gray-500 hover:text-white transition-colors">Testimonials</a></li><li><a href="#faq" className="text-gray-500 hover:text-white transition-colors">FAQ</a></li></ul></div>
-            <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Contact & Support</h3><p className="text-sm text-gray-500 mb-2">Have a question or request?</p><a href="mailto:support@promptforge.ai" className="text-sm text-purple-400 hover:text-purple-300 transition-colors font-medium">support@promptforge.ai</a><div className="mt-4 flex gap-4 text-xs text-gray-500 border-t border-white/5 pt-4"><a href="#privacy" onClick={(e) => { e.preventDefault(); alert("Privacy Policy: We protect your data and do not sell information to third parties."); }} className="hover:text-white transition-colors">Privacy</a><a href="#terms" onClick={(e) => { e.preventDefault(); alert("Terms of Service: Prompts are for legal, personal and licensed commercial activities. Unauthorized reselling is strictly prohibited."); }} className="hover:text-white transition-colors">Terms</a></div></div>
-          </div>
-          <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-600"><p>© {new Date().getFullYear()} PromptForge. Premium AI Prompts. All rights reserved.</p><p className="flex items-center gap-1">Made with <Sparkles className="w-3.5 h-3.5 text-purple-500" /> for the AI Generation</p></div>
-        </div>
-      </footer>
+    <div className="min-h-screen bg-[#050508] text-gray-100 flex flex-col">
+      <header className="border-b border-white/5 bg-[#050508]/80 backdrop-blur-md sticky top-0 z-50"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between"><div className="flex items-center gap-3 cursor-pointer" onClick={()=>navigate('/')}><div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2.5 rounded-xl"><Sparkles className="w-5 h-5 text-white" /></div><span className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Prompt<span className="text-purple-500">Forge</span></span></div><nav className="hidden md:flex gap-8"><a href="#features" className="text-sm text-gray-400">Features</a><a href="#pricing" className="text-sm text-purple-400">Pricing</a><a href="#testimonials" className="text-sm text-gray-400">Testimonials</a><a href="#faq" className="text-sm text-gray-400">FAQ</a></nav><div className="hidden md:flex"><a href="#pricing" className="px-5 py-2.5 rounded-xl bg-purple-600 text-white text-sm">Browse Prompts</a></div><div className="md:hidden"><button onClick={()=>setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-gray-400">{mobileMenuOpen? <X/> : <Menu/>}</button></div></div></header>
+      <section className="pt-24 pb-20 text-center max-w-7xl mx-auto px-4"><h1 className="text-5xl md:text-7xl font-extrabold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">1000+ Prompts That Make AI Work Like Magic</h1><p className="text-gray-400 text-xl mb-10">Unlock ChatGPT, Midjourney, Claude.</p><a href="#pricing" className="px-8 py-4 bg-purple-600 rounded-xl font-semibold inline-flex gap-2">Get Premium Prompts <ArrowRight className="w-5 h-5"/></a></section>
+      <section id="pricing" className="py-24 max-w-7xl mx-auto px-4"><div className="grid grid-cols-1 lg:grid-cols-3 gap-8">{PRODUCTS.map(p=>(<div key={p.id} className={`rounded-3xl p-8 border ${p.popular?'border-purple-500 bg-[#161226]':'border-white/10 bg-[#0c0c12]'}`}><h3 className="text-2xl font-bold mb-2">{p.name}</h3><p className="text-5xl font-extrabold mb-6">{p.price}</p><ul className="space-y-2 mb-6">{p.features.map((f,i)=><li key={i} className="flex gap-2 text-sm"><CheckCircle2 className="w-5 h-5 text-purple-400"/>{f}</li>)}</ul><a href={p.stripeLink} target="_blank" className="block text-center py-3 bg-purple-600 rounded-xl font-bold">Get Instant Access</a></div>))}</div></section>
+      <footer className="border-t border-white/5 py-8 text-center text-sm text-gray-500">© {new Date().getFullYear()} PromptForge</footer>
     </div>
   );
 }

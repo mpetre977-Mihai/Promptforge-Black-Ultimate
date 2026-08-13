@@ -9,10 +9,13 @@
     "lint": "oxlint",
     "preview": "vite preview"
   },
-  "dependencies": {
+    "dependencies": {
     "lucide-react": "^1.28.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "stripe": "^14.25.0",
+    "@supabase/supabase-js": "^2.44.4",
+    "micro": "^3.5.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

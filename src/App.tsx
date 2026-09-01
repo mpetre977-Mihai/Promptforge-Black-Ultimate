@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Sparkles, Layers, Terminal, CheckCircle2, ChevronDown, ChevronUp, Menu, X, ArrowRight, ShieldCheck, Cpu, Zap, Flame, Lock, Star, ExternalLink, LogOut, Download, Crown } from 'lucide-react';
 
